@@ -1,0 +1,5 @@
+{
+  "name": "claude-bridge",
+  "version": "0.1.0",
+  "description": "Run Claude Code on remote servers via SSH — sync, async, file transfer, session continuity"
+}
