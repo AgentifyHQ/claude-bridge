@@ -27,12 +27,13 @@ git clone https://github.com/AgentifyHQ/claude-bridge.git /path/to/claude-bridge
 # 2. Go to your project and run setup
 cd ~/my-project
 /path/to/claude-bridge/setup.sh user@hostname
+# This creates .claude-bridge/, .mcp.json, and registers the skill automatically
 
 # 3. Authenticate Claude Code on the remote (one-time)
 ssh user@hostname
 claude  # follow login prompts, then exit
 
-# 4. Use it
+# 4. Restart Claude Code, then use it
 .claude-bridge/bridge.sh ask "check disk usage and report"
 .claude-bridge/bridge.sh ask -c "what about memory?"       # follow-up
 .claude-bridge/bridge.sh send "long running task"           # async
@@ -80,15 +81,9 @@ your-project/
 
 ## Claude Code Skill
 
-Setup automatically installs a Claude Code skill into `.claude-bridge/` that teaches your Claude agent how to use the bridge. To activate it, add to your project's `.claude/settings.json`:
+Setup automatically installs a Claude Code skill into `.claude-bridge/`, copies `.mcp.json` to your project root, and registers the plugin in `.claude/settings.json`. After restarting Claude Code, your agent will automatically know how to use the bridge when you mention remote servers.
 
-```json
-{
-  "pluginDirs": [".claude-bridge"]
-}
-```
-
-Once activated, Claude will automatically know how to run bridge commands when you mention remote servers. The skill is self-contained in your project — no global install needed.
+Everything is self-contained in your project — no global install needed.
 
 ## Documentation
 

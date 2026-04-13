@@ -168,23 +168,47 @@ mkdir -p "$LOCAL_DIR/.claude-plugin"
 cp "$SCRIPT_DIR/.claude-plugin/plugin.json" "$LOCAL_DIR/.claude-plugin/"
 cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
 
+# Copy .mcp.json to project root for Claude Code
+cp "$LOCAL_DIR/.mcp.json" "$(pwd)/.mcp.json"
+
+# Set up Claude Code plugin in project settings
+CLAUDE_SETTINGS="$(pwd)/.claude/settings.json"
+mkdir -p "$(pwd)/.claude"
+if [ -f "$CLAUDE_SETTINGS" ]; then
+    # Merge pluginDirs into existing settings
+    python3 -c "
+import json
+with open('$CLAUDE_SETTINGS') as f:
+    s = json.load(f)
+dirs = s.get('pluginDirs', [])
+if '.claude-bridge' not in dirs:
+    dirs.append('.claude-bridge')
+s['pluginDirs'] = dirs
+with open('$CLAUDE_SETTINGS', 'w') as f:
+    json.dump(s, f, indent=2)
+"
+else
+    cat > "$CLAUDE_SETTINGS" << SETTINGSEOF
+{
+  "pluginDirs": [".claude-bridge"]
+}
+SETTINGSEOF
+fi
+
 echo ""
 echo "=== Setup complete ==="
 echo ""
-echo "Generated in .claude-bridge/:"
-echo "  bridge.sh    — CLI (no dependencies, just bash+ssh)"
-echo "  .mcp.json    — ssh-mcp config (for Claude Code integration)"
+echo "Generated:"
+echo "  .claude-bridge/    — bridge CLI, skill, and plugin"
+echo "  .mcp.json          — ssh-mcp config for Claude Code"
+echo "  .claude/settings.json — plugin registered"
 echo ""
 echo "Quick start:"
 echo "  .claude-bridge/bridge.sh ask 'hello'"
-echo "  .claude-bridge/bridge.sh send 'hello'    # async"
-echo "  .claude-bridge/bridge.sh process          # process async tasks"
-echo "  .claude-bridge/bridge.sh results          # check results"
-echo ""
-echo "To use with Claude Code:"
-echo "  cp .claude-bridge/.mcp.json ."
-echo ""
-echo "To install the Claude Code skill (teaches Claude how to use the bridge):"
-echo "  Add to .claude/settings.json: {\"pluginDirs\": [\".claude-bridge\"]}"
+echo "  .claude-bridge/bridge.sh ask -c 'follow-up question'"
+echo "  .claude-bridge/bridge.sh send 'async task'"
+echo "  .claude-bridge/bridge.sh process"
+echo "  .claude-bridge/bridge.sh results"
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."
+echo "      Restart Claude Code to load the skill and MCP server."
