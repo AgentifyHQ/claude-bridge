@@ -1,25 +1,23 @@
 # Claude Code Integration
 
-Setup generates a `.mcp.json` for [ssh-mcp](https://github.com/tufantunc/ssh-mcp), which gives your local Claude Code instance direct SSH access to the remote server.
-
-## Setup
-
-```bash
-cp .claude-bridge/.mcp.json .
-```
-
-Then restart Claude Code (or reload MCP servers) to load it.
+Setup automatically merges an [ssh-mcp](https://github.com/tufantunc/ssh-mcp) entry into your project's `.mcp.json` and registers the skill plugin in `.claude/settings.json`. After restarting Claude Code, everything is ready.
 
 ## What it provides
 
-Two MCP tools become available:
+### MCP tools (ssh-mcp)
 
-- `exec` — run a command on the remote server
-- `sudo-exec` — run a command with sudo on the remote server
+Two MCP tools per server become available:
 
-Your local Claude can use these directly in conversation to inspect, manage, and operate the remote server without going through bridge.sh.
+- `mcp__ssh-<name>__exec` — run a command on the remote server
+- `mcp__ssh-<name>__sudo-exec` — run a command with sudo on the remote server
 
-## When to use this vs bridge.sh
+Your local Claude can use these directly in conversation to inspect, manage, and operate the remote server.
+
+### Skill
+
+The Claude Code skill teaches your agent how to use bridge.sh. When you mention remote servers, Claude will automatically know how to run bridge commands.
+
+## When to use ssh-mcp vs bridge.sh
 
 - **ssh-mcp** — when you're in an interactive Claude Code session and want Claude to directly run commands on the remote. Best for exploration, debugging, and ad-hoc tasks.
 - **bridge.sh** — when you want the remote Claude to think autonomously about a task and report back. Best for complex tasks that benefit from the remote agent's CLAUDE.md context and reporting format.

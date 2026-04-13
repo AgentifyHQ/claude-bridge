@@ -1,50 +1,70 @@
 # Multi-server Setup
 
-## One server per project
+## Adding servers
 
-The simplest approach — run setup from different project folders:
+Run `setup.sh` multiple times from the same project folder with different `--name` values:
 
 ```bash
-cd ~/project-a
-~/claude-bridge/setup.sh admin@10.0.1.50
-
-cd ~/project-b
-~/claude-bridge/setup.sh deploy@prod.example.com --port 2222
-
-cd ~/homelab
-~/claude-bridge/setup.sh pi@192.168.1.100
+cd ~/my-project
+/path/to/claude-bridge/setup.sh admin@10.0.1.50 --name file-server
+/path/to/claude-bridge/setup.sh deploy@prod.example.com --name prod --port 2222
+/path/to/claude-bridge/setup.sh pi@192.168.1.100 --name homelab
 ```
 
-Each project gets its own `.claude-bridge/` with config for its server.
+Each run:
+- Adds a server config to `.claude-bridge/servers/<name>.conf`
+- Merges the ssh-mcp entry into `.mcp.json`
+- Sets the first server as default
 
-## Multiple servers in one project
+## Using multiple servers
 
-Run setup multiple times from the same folder. Each run overwrites `.claude-bridge/`, so if you need multiple servers in one project:
+```bash
+# Use default server (first one added, or set with `default`)
+bridge.sh ask "check status"
 
-1. Run setup for the first server
-2. Rename `.claude-bridge/` to `.claude-bridge-<name>/`
-3. Run setup for the next server
-4. Repeat
+# Use a specific server
+bridge.sh prod ask "check deployments"
+bridge.sh homelab ssh "df -h"
+bridge.sh file-server pull /data/report.csv ./
 
-Or manually duplicate and edit the generated `bridge.sh` files.
+# List all servers
+bridge.sh servers
+
+# Change default
+bridge.sh default prod
+```
+
+With justfile:
+```bash
+# justfile commands use the default server
+just ask "check status"
+
+# For a specific server, use bridge.sh directly
+.claude-bridge/bridge.sh prod ask "check deployments"
+```
+
+## What gets created
+
+```
+.claude-bridge/
+├── bridge.sh               # single CLI for all servers
+├── servers/
+│   ├── file-server.conf    # SSH_TARGET, SSH_KEY, EXTRA_TOOLS, etc.
+│   ├── prod.conf
+│   ├── homelab.conf
+│   └── .default            # contains "file-server"
+├── .claude-plugin/
+└── skills/
+```
 
 ## Claude Code with multiple servers
 
-To give Claude Code access to multiple servers, merge the `.mcp.json` entries manually:
+Each `setup.sh` run merges a new MCP server entry into `.mcp.json`. After adding all servers, Claude Code has access to all of them simultaneously:
 
-```json
-{
-  "mcpServers": {
-    "ssh-server-a": {
-      "command": "npx",
-      "args": ["-y", "ssh-mcp", "--", "--host=10.0.1.50", "--user=admin", "--key=~/.ssh/id_ed25519"]
-    },
-    "ssh-server-b": {
-      "command": "npx",
-      "args": ["-y", "ssh-mcp", "--", "--host=prod.example.com", "--user=deploy", "--key=~/.ssh/id_ed25519"]
-    }
-  }
-}
-```
+- `mcp__ssh-file-server__exec` — run commands on file-server
+- `mcp__ssh-prod__exec` — run commands on prod
+- `mcp__ssh-homelab__exec` — run commands on homelab
 
-Each server gets its own namespaced MCP tools (e.g., `mcp__ssh-server-a__exec`, `mcp__ssh-server-b__exec`), so Claude can talk to all of them in one session.
+## Per-server customization
+
+Each server can have its own `EXTRA_TOOLS` and `SKIP_PERMISSIONS` in its `.conf` file. See [Customization](customization.md) for details.

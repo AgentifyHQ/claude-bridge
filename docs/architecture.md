@@ -14,11 +14,19 @@ claude-bridge connects a local Claude Code instance to a remote one over SSH. It
 
 ```
 .claude-bridge/
-├── bridge.sh         # CLI entry point, all commands route through here
-└── .mcp.json         # ssh-mcp config for Claude Code integration
+├── bridge.sh           # CLI entry point, routes commands to servers
+├── servers/
+│   ├── myserver.conf   # SSH_TARGET, SSH_KEY, EXTRA_TOOLS, SKIP_PERMISSIONS
+│   └── .default        # default server name
+├── .claude-plugin/     # plugin metadata
+└── skills/             # Claude Code skill
+
+justfile                # optional convenience wrapper (auto-generated)
+.mcp.json               # ssh-mcp config for Claude Code (auto-merged)
+.claude/settings.json   # plugin registration (auto-merged)
 ```
 
-`bridge.sh` is a self-contained bash script with the SSH connection details baked in. It uses `ssh` for commands and `scp` for file transfer. No dependencies beyond bash and ssh.
+`bridge.sh` reads server config from `.conf` files and uses `ssh` for commands and `scp` for file transfer. No dependencies beyond bash and ssh.
 
 ### Remote (the server)
 
@@ -34,35 +42,36 @@ claude-bridge connects a local Claude Code instance to a remote one over SSH. It
 └── CLAUDE.md         # agent context, reporting instructions
 ```
 
-### Sync flow
+## Sync flow
 
 ```
-bridge.sh ask "prompt"
-  → ssh user@host "claude -p 'prompt' --allowedTools '...' -n claude-bridge"
-  → remote claude runs, output goes to stdout
+bridge.sh [server] ask "prompt"
+  → loads servers/<server>.conf (SSH_TARGET, EXTRA_TOOLS, SKIP_PERMISSIONS)
+  → ssh user@host "claude -p 'prompt' --allowedTools '...' -n claude-bridge [--dangerously-skip-permissions]"
+  → remote Claude runs, output goes to stdout
   → result printed locally
 ```
 
-### Async flow
+## Async flow
 
 ```
-bridge.sh send "prompt"
+bridge.sh [server] send "prompt"
   → ssh user@host "python3 submit_task.py 'prompt'"
   → task-123.json written to inbox/
 
-bridge.sh process (or background worker)
+bridge.sh [server] process (or background worker)
   → ssh user@host "python3 process_tasks.py"
   → reads inbox/task-123.json
   → runs: claude -p "prompt" --allowedTools "..." -n claude-bridge
   → writes outbox/task-123.json
   → deletes inbox/task-123.json
 
-bridge.sh results
+bridge.sh [server] results
   → ssh user@host "cat outbox/*.json"
   → results printed locally
 ```
 
-### Session continuity
+## Session continuity
 
 Both modes support `--continue` which tells `claude -p` to resume the most recent session in the working directory. This gives the remote Claude memory of previous interactions.
 
@@ -74,7 +83,8 @@ Sessions are named (`-n claude-bridge`) and scoped to `~/claude-workspace/`.
 ## Security
 
 - SSH key auth only (no passwords in config)
-- Allowed tools are explicitly listed (no blanket shell access)
+- Allowed tools are explicitly listed per server (no blanket shell access)
+- `EXTRA_TOOLS` and `SKIP_PERMISSIONS` are per-server opt-in via `.conf` files
 - Remote Claude runs in `~/claude-workspace/` with restricted tool permissions
 - CLAUDE.md instructs the agent not to modify system config or delete files outside the bridge directory
 - Generated config (`.claude-bridge/`) should be gitignored as it contains SSH connection details

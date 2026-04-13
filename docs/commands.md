@@ -1,15 +1,18 @@
 # Commands Reference
 
-All commands go through `.claude-bridge/bridge.sh`.
+## bridge.sh
 
-## Synchronous (ask and wait)
+All commands go through `.claude-bridge/bridge.sh`. For multi-server setups, specify the server name before the command: `bridge.sh <server> <command>`. If only one server is configured, the server name is optional.
+
+### Synchronous (ask and wait)
 
 | Command | Description |
 |---------|-------------|
 | `bridge.sh ask "prompt"` | Ask remote Claude, get response immediately |
 | `bridge.sh ask -c "prompt"` | Follow-up (continues previous session) |
+| `bridge.sh myserver ask "prompt"` | Ask a specific server |
 
-## Async (queue and process)
+### Async (queue and process)
 
 | Command | Description |
 |---------|-------------|
@@ -20,14 +23,14 @@ All commands go through `.claude-bridge/bridge.sh`.
 | `bridge.sh read <task-id>` | Read a specific result |
 | `bridge.sh clear` | Clear all results |
 
-## File transfer
+### File transfer
 
 | Command | Description |
 |---------|-------------|
 | `bridge.sh pull <remote-path> <local-path>` | Download file from remote |
 | `bridge.sh push <local-path> <remote-path>` | Upload file to remote |
 
-## Worker management
+### Worker management
 
 | Command | Description |
 |---------|-------------|
@@ -35,16 +38,48 @@ All commands go through `.claude-bridge/bridge.sh`.
 | `bridge.sh worker-stop` | Stop background worker |
 | `bridge.sh worker-status` | Check worker and queue status |
 
-## General
+### Server management
+
+| Command | Description |
+|---------|-------------|
+| `bridge.sh servers` | List all configured servers |
+| `bridge.sh default <server>` | Set the default server |
+
+### General
 
 | Command | Description |
 |---------|-------------|
 | `bridge.sh ssh "cmd"` | Run any command on remote server |
 | `bridge.sh help` | Show help |
 
+## justfile
+
+Setup generates a `justfile` if one doesn't exist. It wraps bridge.sh for convenience. Requires [just](https://github.com/casey/just).
+
+| Command | Description |
+|---------|-------------|
+| `just ask "prompt"` | Ask remote Claude (sync) |
+| `just follow-up "prompt"` | Follow-up (continues session) |
+| `just send "prompt"` | Queue async task |
+| `just send-follow-up "prompt"` | Queue async follow-up |
+| `just process` | Process async tasks |
+| `just results` | Show results |
+| `just read <id>` | Read specific result |
+| `just clear` | Clear results |
+| `just pull <remote> <local>` | Download file |
+| `just push <local> <remote>` | Upload file |
+| `just worker-start` | Start background worker |
+| `just worker-stop` | Stop worker |
+| `just worker-status` | Worker status |
+| `just servers` | List servers |
+| `just default <server>` | Set default server |
+| `just ssh-cmd "cmd"` | Run remote command |
+
+If you use a different task runner (make, task, etc.), the generated justfile can serve as a reference for wrapping bridge.sh in your preferred tool.
+
 ## Task JSON format
 
-Tasks in `inbox/`:
+Tasks in remote `~/claude-bridge/inbox/`:
 ```json
 {
   "id": "task-1234-5678",
@@ -54,7 +89,7 @@ Tasks in `inbox/`:
 }
 ```
 
-Results in `outbox/`:
+Results in remote `~/claude-bridge/outbox/`:
 ```json
 {
   "id": "task-1234-5678",

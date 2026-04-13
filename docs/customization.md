@@ -2,21 +2,42 @@
 
 After running `setup.sh`, customize the bridge for your server.
 
-## Add server-specific tools
+## Server config file
 
-By default, the remote Claude can run basic system commands (`ls`, `cat`, `df`, `ps`, `docker`, etc.) and use `Read`, `Write`, `Edit`, `Glob`, `Grep`.
-
-To add server-specific tools, edit `.claude-bridge/bridge.sh` and prepend to the `ALLOWED_TOOLS` line:
+Each server has a config at `.claude-bridge/servers/<name>.conf`:
 
 ```bash
-ALLOWED_TOOLS="Bash(mycli:*) Bash(kubectl:*) Bash(ls:*) ..."
+SSH_TARGET="user@hostname"
+SSH_PORT="22"
+SSH_KEY="/path/to/key"
+BRIDGE="/home/user/claude-bridge"
+EXTRA_TOOLS="Bash(mycli:*) Bash(kubectl:*)"    # optional
+SKIP_PERMISSIONS="true"                         # optional
 ```
 
-For async mode, also update `~/claude-bridge/process_tasks.py` on the remote server.
+### EXTRA_TOOLS
+
+Add server-specific CLI tools the remote Claude is allowed to use. These are prepended to the default allowed tools.
+
+```bash
+# Example: server running Kubernetes
+EXTRA_TOOLS="Bash(kubectl:*) Bash(helm:*)"
+
+# Example: server running a custom CLI
+EXTRA_TOOLS="Bash(mycli:*)"
+```
+
+### SKIP_PERMISSIONS
+
+Set to `"true"` to pass `--dangerously-skip-permissions` to the remote Claude. This prevents permission prompts that would block non-interactive execution.
+
+```bash
+SKIP_PERMISSIONS="true"
+```
 
 ## Add server context
 
-Edit `~/claude-workspace/CLAUDE.md` on the remote to give the bridge agent context about what's on the server. For example:
+Edit `~/claude-workspace/CLAUDE.md` on the remote to give the bridge agent context about what's installed:
 
 ```markdown
 ## Server-specific tools
@@ -25,14 +46,14 @@ This server runs a Kubernetes cluster. Available CLIs:
 
     kubectl get pods
     helm list
-    k9s
+    docker ps
 ```
 
-This helps the remote Claude know what tools are available and how to use them.
+This helps the remote Claude know what tools are available without being told each time.
 
-## Environment variables
+## Environment variables (on remote)
 
-Set these on the remote server to override defaults:
+Set these on the remote server (e.g., in `~/.bashrc`) to override defaults:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -50,4 +71,4 @@ The remote agent is instructed (via CLAUDE.md) to provide structured reports:
 2. **What it found** — results, status, errors, data
 3. **What needs attention** — warnings, recommendations, follow-up actions
 
-You can customize the reporting format by editing `~/claude-workspace/CLAUDE.md` on the remote.
+Customize the reporting format by editing `~/claude-workspace/CLAUDE.md` on the remote.

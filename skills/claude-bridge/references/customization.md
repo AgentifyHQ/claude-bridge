@@ -1,49 +1,39 @@
 # Customization
 
-## Adding Server-Specific Tools
+## Server config file
 
-By default, the remote Claude can run basic system commands (`ls`, `cat`, `df`, `ps`, `docker`, `systemctl`, etc.) and use `Read`, `Write`, `Edit`, `Glob`, `Grep`.
-
-To add server-specific tools:
-
-### For sync mode (bridge.sh ask)
-
-Edit `.claude-bridge/bridge.sh` and prepend to the `ALLOWED_TOOLS` line:
+Each server has a config at `.claude-bridge/servers/<name>.conf`:
 
 ```bash
-ALLOWED_TOOLS="Bash(mycli:*) Bash(kubectl:*) Bash(ls:*) ..."
+SSH_TARGET="user@hostname"
+SSH_PORT="22"
+SSH_KEY="/path/to/key"
+BRIDGE="/home/user/claude-bridge"
+EXTRA_TOOLS="Bash(mycli:*) Bash(kubectl:*)"    # optional
+SKIP_PERMISSIONS="true"                         # optional
 ```
 
-### For async mode (bridge.sh send/process)
+### EXTRA_TOOLS
 
-Edit `~/claude-bridge/process_tasks.py` on the remote server. Find the `DEFAULT_ALLOWED_TOOLS` list and add entries:
+Add server-specific CLI tools the remote Claude is allowed to use:
 
-```python
-DEFAULT_ALLOWED_TOOLS = " ".join([
-    "Bash(mycli:*)", "Bash(kubectl:*)",  # add here
-    "Bash(ls:*)", "Bash(cat:*)", ...
-])
+```bash
+EXTRA_TOOLS="Bash(kubectl:*) Bash(helm:*)"
 ```
 
-## Customizing Remote Agent Context
+### SKIP_PERMISSIONS
 
-Edit `~/claude-workspace/CLAUDE.md` on the remote server to give the bridge agent context about what's installed and how to use it:
+Set to `"true"` to pass `--dangerously-skip-permissions` to the remote Claude:
 
-```markdown
-## Server-specific tools
-
-This server runs a Kubernetes cluster. Available CLIs:
-
-    kubectl get pods
-    helm list
-    docker ps
+```bash
+SKIP_PERMISSIONS="true"
 ```
 
-This helps the remote Claude know what tools are available without being told each time.
+## Server context
 
-## Environment Variables
+Edit `~/claude-workspace/CLAUDE.md` on the remote to give the bridge agent context about what's installed.
 
-Set these on the remote server (e.g., in `~/.bashrc`) to override defaults:
+## Environment variables (on remote)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -53,42 +43,6 @@ Set these on the remote server (e.g., in `~/.bashrc`) to override defaults:
 | `CLAUDE_BRIDGE_SESSION` | `claude-bridge` | Session name for continuity |
 | `CLAUDE_BRIDGE_ALLOWED_TOOLS` | (see source) | Override allowed tools for async mode |
 
-## Remote Directory Layout
+## Multi-server
 
-```
-~/claude-bridge/          # bridge infrastructure
-├── inbox/                # async task queue
-├── outbox/               # async results
-├── process_tasks.py      # task processor
-├── bridge-worker.sh      # background watcher
-└── submit_task.py        # task submitter
-
-~/claude-workspace/       # remote Claude's working directory
-└── CLAUDE.md             # agent context + reporting guidelines
-```
-
-## Reporting Format
-
-The remote agent is instructed to provide structured reports:
-
-1. **What it did** — commands run, files modified, actions taken
-2. **What it found** — results, status, errors, data
-3. **What needs attention** — warnings, recommendations, follow-up actions
-
-Customize by editing `~/claude-workspace/CLAUDE.md` on the remote.
-
-## Multi-Server in One Project
-
-Each `setup.sh` run overwrites `.claude-bridge/`. For multiple servers in one project, rename after each setup:
-
-```bash
-# Setup server A
-setup.sh admin@server-a
-mv .claude-bridge .claude-bridge-server-a
-
-# Setup server B
-setup.sh deploy@server-b
-mv .claude-bridge .claude-bridge-server-b
-```
-
-For Claude Code ssh-mcp access to multiple servers, merge `.mcp.json` entries manually into a single file with different server names.
+Run `setup.sh` multiple times with different `--name` values. Each server gets its own `.conf` file. Use `bridge.sh <server> <command>` to target a specific server, or `bridge.sh default <server>` to change the default.

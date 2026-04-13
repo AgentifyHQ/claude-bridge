@@ -197,13 +197,21 @@ with open('$CLAUDE_SETTINGS', 'w') as f:
     json.dump(existing, f, indent=2)
 "
 
+# Deploy justfile if not present
+JUSTFILE="$(pwd)/justfile"
+if [ ! -f "$JUSTFILE" ]; then
+    cp "$SCRIPT_DIR/remote/justfile.template" "$JUSTFILE"
+    echo "  justfile — created (requires just: https://github.com/casey/just)"
+fi
+
 echo ""
 echo "=== Setup complete: $SERVER_NAME ==="
 echo ""
 echo "Server '$SERVER_NAME' added to .claude-bridge/"
 echo ""
 echo "Quick start:"
-echo "  .claude-bridge/bridge.sh ask 'hello'"
+echo "  .claude-bridge/bridge.sh ask 'hello'                 # bridge.sh (no deps)"
+echo "  just ask 'hello'                                     # justfile (needs just)"
 echo "  .claude-bridge/bridge.sh $SERVER_NAME ask 'hello'    # explicit server"
 echo "  .claude-bridge/bridge.sh servers                     # list all servers"
 echo ""

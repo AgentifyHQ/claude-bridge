@@ -1,0 +1,66 @@
+# Claude Bridge — remote server management
+# Requires: just (https://github.com/casey/just)
+# Wraps .claude-bridge/bridge.sh for convenience
+
+bridge := justfile_directory() / ".claude-bridge/bridge.sh"
+
+# Ask remote Claude (synchronous)
+ask +prompt:
+    {{bridge}} ask "{{prompt}}"
+
+# Follow-up (continues previous session)
+follow-up +prompt:
+    {{bridge}} ask -c "{{prompt}}"
+
+# Queue async task
+send +prompt:
+    {{bridge}} send "{{prompt}}"
+
+# Queue async follow-up
+send-follow-up +prompt:
+    {{bridge}} follow-up "{{prompt}}"
+
+# Process async tasks
+process:
+    {{bridge}} process
+
+# Check results
+results:
+    {{bridge}} results
+
+# Read a specific result
+read id:
+    {{bridge}} read "{{id}}"
+
+# Clear results
+clear:
+    {{bridge}} clear
+
+# File transfer
+pull remote local:
+    {{bridge}} pull "{{remote}}" "{{local}}"
+
+push local remote:
+    {{bridge}} push "{{local}}" "{{remote}}"
+
+# Background worker
+worker-start:
+    {{bridge}} worker-start
+
+worker-stop:
+    {{bridge}} worker-stop
+
+worker-status:
+    {{bridge}} worker-status
+
+# List servers
+servers:
+    {{bridge}} servers
+
+# Set default server
+default server:
+    {{bridge}} default "{{server}}"
+
+# Remote command
+ssh-cmd +cmd:
+    {{bridge}} ssh "{{cmd}}"
