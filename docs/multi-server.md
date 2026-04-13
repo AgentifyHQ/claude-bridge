@@ -53,8 +53,6 @@ just ask "check status"
 │   ├── prod.conf
 │   ├── homelab.conf
 │   └── .default            # contains "file-server"
-├── .claude-plugin/
-└── skills/
 ```
 
 ## Claude Code with multiple servers

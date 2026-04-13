@@ -1,6 +1,6 @@
 # Claude Code Integration
 
-Setup automatically merges an [ssh-mcp](https://github.com/tufantunc/ssh-mcp) entry into your project's `.mcp.json` and registers the skill plugin in `.claude/settings.json`. After restarting Claude Code, everything is ready.
+Setup automatically merges an [ssh-mcp](https://github.com/tufantunc/ssh-mcp) entry into your project's `.mcp.json` and installs a Claude Code skill to `~/.claude/skills/claude-bridge/`. After restarting Claude Code, everything is ready.
 
 ## What it provides
 

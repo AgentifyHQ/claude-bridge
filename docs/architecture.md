@@ -15,15 +15,16 @@ claude-bridge connects a local Claude Code instance to a remote one over SSH. It
 ```
 .claude-bridge/
 ├── bridge.sh           # CLI entry point, routes commands to servers
-├── servers/
-│   ├── myserver.conf   # SSH_TARGET, SSH_KEY, EXTRA_TOOLS, SKIP_PERMISSIONS
-│   └── .default        # default server name
-├── .claude-plugin/     # plugin metadata
-└── skills/             # Claude Code skill
+└── servers/
+    ├── myserver.conf   # SSH_TARGET, SSH_KEY, EXTRA_TOOLS, SKIP_PERMISSIONS
+    └── .default        # default server name
 
-justfile                # optional convenience wrapper (auto-generated)
+justfile.claude-bridge  # optional convenience wrapper (auto-generated)
 .mcp.json               # ssh-mcp config for Claude Code (auto-merged)
-.claude/settings.json   # plugin registration (auto-merged)
+
+~/.claude/skills/claude-bridge/   # skill (auto-installed by setup)
+├── SKILL.md
+└── references/
 ```
 
 `bridge.sh` reads server config from `.conf` files and uses `ssh` for commands and `scp` for file transfer. No dependencies beyond bash and ssh.
