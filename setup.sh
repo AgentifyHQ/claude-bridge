@@ -132,13 +132,40 @@ LOCAL_DIR="$(pwd)/.claude-bridge"
 BRIDGE="$REMOTE_HOME/claude-bridge"
 mkdir -p "$LOCAL_DIR/servers"
 
-# Generate server config
-cat > "$LOCAL_DIR/servers/$SERVER_NAME.conf" << CONFEOF
+# Generate server config (preserve custom fields if conf already exists)
+CONF_FILE="$LOCAL_DIR/servers/$SERVER_NAME.conf"
+if [ -f "$CONF_FILE" ]; then
+    # Update connection fields, keep custom fields (EXTRA_TOOLS, SKIP_PERMISSIONS, etc.)
+    python3 -c "
+import re
+with open('$CONF_FILE') as f:
+    lines = f.readlines()
+# Update known fields
+updates = {'SSH_TARGET': '$TARGET', 'SSH_PORT': '$SSH_PORT', 'SSH_KEY': '$FULL_SSH_KEY', 'BRIDGE': '$BRIDGE'}
+updated = set()
+new_lines = []
+for line in lines:
+    key = line.split('=')[0].strip() if '=' in line else ''
+    if key in updates:
+        new_lines.append(key + '=\"' + updates[key] + '\"\n')
+        updated.add(key)
+    else:
+        new_lines.append(line)
+# Add any missing required fields
+for key, val in updates.items():
+    if key not in updated:
+        new_lines.append(key + '=\"' + val + '\"\n')
+with open('$CONF_FILE', 'w') as f:
+    f.writelines(new_lines)
+"
+else
+    cat > "$CONF_FILE" << CONFEOF
 SSH_TARGET="$TARGET"
 SSH_PORT="$SSH_PORT"
 SSH_KEY="$FULL_SSH_KEY"
 BRIDGE="$BRIDGE"
 CONFEOF
+fi
 
 # Set as default if it's the only server (or first one)
 if [ ! -f "$LOCAL_DIR/servers/.default" ]; then
