@@ -197,12 +197,8 @@ with open('$CLAUDE_SETTINGS', 'w') as f:
     json.dump(existing, f, indent=2)
 "
 
-# Deploy justfile if not present
-JUSTFILE="$(pwd)/justfile"
-if [ ! -f "$JUSTFILE" ]; then
-    cp "$SCRIPT_DIR/remote/justfile.template" "$JUSTFILE"
-    echo "  justfile — created (requires just: https://github.com/casey/just)"
-fi
+# Deploy justfile.claude-bridge as a reference
+cp "$SCRIPT_DIR/remote/justfile.template" "$(pwd)/justfile.claude-bridge"
 
 echo ""
 echo "=== Setup complete: $SERVER_NAME ==="
@@ -211,9 +207,12 @@ echo "Server '$SERVER_NAME' added to .claude-bridge/"
 echo ""
 echo "Quick start:"
 echo "  .claude-bridge/bridge.sh ask 'hello'                 # bridge.sh (no deps)"
-echo "  just ask 'hello'                                     # justfile (needs just)"
 echo "  .claude-bridge/bridge.sh $SERVER_NAME ask 'hello'    # explicit server"
 echo "  .claude-bridge/bridge.sh servers                     # list all servers"
+echo ""
+echo "Optional justfile (requires just: https://github.com/casey/just):"
+echo "  mv justfile.claude-bridge justfile    # rename to use as-is"
+echo "  cat justfile.claude-bridge >> justfile # or append to existing"
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."
 echo "      Restart Claude Code to load the skill and MCP server."

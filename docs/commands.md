@@ -54,7 +54,7 @@ All commands go through `.claude-bridge/bridge.sh`. For multi-server setups, spe
 
 ## justfile
 
-Setup generates a `justfile` if one doesn't exist. It wraps bridge.sh for convenience. Requires [just](https://github.com/casey/just).
+Setup generates `justfile.claude-bridge` which wraps bridge.sh. To use it, rename to `justfile` or merge into your existing one. Requires [just](https://github.com/casey/just).
 
 | Command | Description |
 |---------|-------------|
