@@ -168,32 +168,38 @@ mkdir -p "$LOCAL_DIR/.claude-plugin"
 cp "$SCRIPT_DIR/.claude-plugin/plugin.json" "$LOCAL_DIR/.claude-plugin/"
 cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
 
-# Copy .mcp.json to project root for Claude Code
-cp "$LOCAL_DIR/.mcp.json" "$(pwd)/.mcp.json"
+# Merge ssh-mcp config into project .mcp.json
+MCP_JSON="$(pwd)/.mcp.json"
+python3 -c "
+import json, os
+new_servers = json.load(open('$LOCAL_DIR/.mcp.json'))['mcpServers']
+existing = {}
+if os.path.exists('$MCP_JSON'):
+    with open('$MCP_JSON') as f:
+        existing = json.load(f)
+servers = existing.get('mcpServers', {})
+servers.update(new_servers)
+existing['mcpServers'] = servers
+with open('$MCP_JSON', 'w') as f:
+    json.dump(existing, f, indent=2)
+"
 
-# Set up Claude Code plugin in project settings
+# Merge pluginDirs into .claude/settings.json
 CLAUDE_SETTINGS="$(pwd)/.claude/settings.json"
 mkdir -p "$(pwd)/.claude"
-if [ -f "$CLAUDE_SETTINGS" ]; then
-    # Merge pluginDirs into existing settings
-    python3 -c "
-import json
-with open('$CLAUDE_SETTINGS') as f:
-    s = json.load(f)
-dirs = s.get('pluginDirs', [])
+python3 -c "
+import json, os
+existing = {}
+if os.path.exists('$CLAUDE_SETTINGS'):
+    with open('$CLAUDE_SETTINGS') as f:
+        existing = json.load(f)
+dirs = existing.get('pluginDirs', [])
 if '.claude-bridge' not in dirs:
     dirs.append('.claude-bridge')
-s['pluginDirs'] = dirs
+existing['pluginDirs'] = dirs
 with open('$CLAUDE_SETTINGS', 'w') as f:
-    json.dump(s, f, indent=2)
+    json.dump(existing, f, indent=2)
 "
-else
-    cat > "$CLAUDE_SETTINGS" << SETTINGSEOF
-{
-  "pluginDirs": [".claude-bridge"]
-}
-SETTINGSEOF
-fi
 
 echo ""
 echo "=== Setup complete ==="
