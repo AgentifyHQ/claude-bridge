@@ -75,6 +75,17 @@ your-project/
 
 **Remote:** Python 3.8+, Node.js (for Claude Code install only).
 
+## Claude Code Plugin
+
+This repo includes a Claude Code plugin with a skill that teaches your Claude agent how to use the bridge. Once installed, Claude will automatically know how to run bridge commands when you mention remote servers.
+
+```bash
+# Add as a plugin directory in your Claude Code session
+claude --plugin-dir ~/claude-bridge
+```
+
+Or add it permanently in your Claude Code settings.
+
 ## Documentation
 
 - [Commands Reference](docs/commands.md) — full list of bridge.sh commands
