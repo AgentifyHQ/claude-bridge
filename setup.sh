@@ -163,6 +163,11 @@ sed \
     "$SCRIPT_DIR/remote/bridge-cli.sh" > "$LOCAL_DIR/bridge.sh"
 chmod +x "$LOCAL_DIR/bridge.sh"
 
+# Deploy plugin + skill into .claude-bridge/ so it's self-contained
+mkdir -p "$LOCAL_DIR/.claude-plugin"
+cp "$SCRIPT_DIR/.claude-plugin/plugin.json" "$LOCAL_DIR/.claude-plugin/"
+cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
+
 echo ""
 echo "=== Setup complete ==="
 echo ""
@@ -176,7 +181,10 @@ echo "  .claude-bridge/bridge.sh send 'hello'    # async"
 echo "  .claude-bridge/bridge.sh process          # process async tasks"
 echo "  .claude-bridge/bridge.sh results          # check results"
 echo ""
-echo "To use with Claude Code, copy .mcp.json to project root:"
+echo "To use with Claude Code:"
 echo "  cp .claude-bridge/.mcp.json ."
+echo ""
+echo "To install the Claude Code skill (teaches Claude how to use the bridge):"
+echo "  Add to .claude/settings.json: {\"pluginDirs\": [\".claude-bridge\"]}"
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."

@@ -21,12 +21,12 @@ Local Machine                          Remote Server
 ## Quick start
 
 ```bash
-# 1. Clone
-git clone https://github.com/AgentifyHQ/claude-bridge.git ~/claude-bridge
+# 1. Clone claude-bridge anywhere you like
+git clone https://github.com/AgentifyHQ/claude-bridge.git /path/to/claude-bridge
 
 # 2. Go to your project and run setup
 cd ~/my-project
-~/claude-bridge/setup.sh user@hostname
+/path/to/claude-bridge/setup.sh user@hostname
 
 # 3. Authenticate Claude Code on the remote (one-time)
 ssh user@hostname
@@ -43,7 +43,7 @@ claude  # follow login prompts, then exit
 ## Setup options
 
 ```
-~/claude-bridge/setup.sh user@host [options]
+/path/to/claude-bridge/setup.sh user@host [options]
 
   --key PATH       SSH key path (default: ~/.ssh/id_ed25519)
   --port PORT      SSH port (default: 22)
@@ -58,9 +58,12 @@ claude  # follow login prompts, then exit
 **In your project folder:**
 ```
 your-project/
-└── .claude-bridge/       # gitignore this
-    ├── bridge.sh         # CLI — all commands go through here
-    └── .mcp.json         # ssh-mcp config for Claude Code
+├── .claude-bridge/       # gitignore this
+│   ├── bridge.sh         # CLI — all commands go through here
+│   ├── .mcp.json         # ssh-mcp config for Claude Code
+│   ├── .claude-plugin/   # plugin metadata
+│   └── skills/           # Claude Code skill
+└── .mcp.json             # copy from .claude-bridge/ for Claude Code
 ```
 
 **On the remote server:**
@@ -75,36 +78,17 @@ your-project/
 
 **Remote:** Python 3.8+, Node.js (for Claude Code install only).
 
-## Claude Code Plugin
+## Claude Code Skill
 
-This repo includes a Claude Code plugin with a skill that teaches your Claude agent how to use the bridge. Once installed, Claude will automatically know how to run bridge commands when you mention remote servers.
+Setup automatically installs a Claude Code skill into `.claude-bridge/` that teaches your Claude agent how to use the bridge. To activate it, add to your project's `.claude/settings.json`:
 
-### Install the skill
-
-**Per session** (temporary):
-```bash
-claude --plugin-dir ~/claude-bridge
-```
-
-**Per project** (permanent for this project):
-
-Add to your project's `.claude/settings.json`:
 ```json
 {
-  "pluginDirs": ["~/claude-bridge"]
+  "pluginDirs": [".claude-bridge"]
 }
 ```
 
-**Globally** (all projects):
-
-Add to `~/.claude/settings.json`:
-```json
-{
-  "pluginDirs": ["~/claude-bridge"]
-}
-```
-
-The skill is read directly from the cloned repo — no files are copied. Run `git pull` in `~/claude-bridge` to get updates.
+Once activated, Claude will automatically know how to run bridge commands when you mention remote servers. The skill is self-contained in your project — no global install needed.
 
 ## Documentation
 
