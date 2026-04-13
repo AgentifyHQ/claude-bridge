@@ -21,7 +21,7 @@ load_server() {
 }
 
 list_servers() {
-    for f in "$SERVERS_DIR"/*.conf 2>/dev/null; do
+    for f in "$SERVERS_DIR"/*.conf; do
         [ -f "$f" ] || continue
         local name=$(basename "$f" .conf)
         source "$f"
