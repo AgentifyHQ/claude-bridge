@@ -128,7 +128,7 @@ sed \
 echo "[6/6] Generating local configuration..."
 
 FULL_SSH_KEY=$(eval echo "$SSH_KEY")
-LOCAL_DIR="$SCRIPT_DIR/servers/$SERVER_NAME"
+LOCAL_DIR="$(pwd)/.claude-bridge"
 mkdir -p "$LOCAL_DIR"
 
 # Generate .mcp.json
@@ -152,55 +152,9 @@ cat > "$LOCAL_DIR/.mcp.json" << MCPEOF
 }
 MCPEOF
 
-# Generate justfile — hardcode values to avoid just/bash interpolation conflicts
-SSH="ssh -p $SSH_PORT -i $SSH_KEY $TARGET"
 BRIDGE="$REMOTE_HOME/claude-bridge"
-cat > "$LOCAL_DIR/justfile" << JUSTEOF
-# Claude Bridge: $SERVER_NAME ($TARGET)
 
-# Run a command on the remote server
-ssh-cmd cmd:
-    $SSH "{{cmd}}"
-
-# Send a new task (fresh session)
-send-task prompt:
-    $SSH "python3 $BRIDGE/submit_task.py '{{prompt}}'"
-
-# Send a follow-up (continues previous session)
-follow-up prompt:
-    $SSH "python3 $BRIDGE/submit_task.py '{{prompt}}' --continue"
-
-# Check for completed results
-check-results:
-    $SSH "for f in $BRIDGE/outbox/*.json; do [ -f \"\\\$f\" ] && echo \"=== \\\$(basename \\\$f) ===\" && cat \"\\\$f\" && echo; done 2>/dev/null || echo 'No results yet.'"
-
-# Read a specific result
-read-result id:
-    $SSH "cat $BRIDGE/outbox/{{id}}.json 2>/dev/null || echo 'Result not found: {{id}}'"
-
-# Clear results
-clear-results:
-    $SSH "rm -f $BRIDGE/outbox/*.json && echo 'Outbox cleared.'"
-
-# Process pending tasks once
-process-once:
-    $SSH "export PATH=\\\$HOME/.local/bin:\\\$HOME/.npm-global/bin:\\\$PATH && python3 $BRIDGE/process_tasks.py"
-
-# Start background worker
-start-worker-bg:
-    $SSH "nohup $BRIDGE/bridge-worker.sh --watch > $BRIDGE/worker.log 2>&1 &"
-    echo "Worker started. Logs: just ssh-cmd 'tail -f $BRIDGE/worker.log'"
-
-# Stop background worker
-stop-worker:
-    $SSH "pkill -f 'bridge-worker.sh --watch' && echo 'Worker stopped.' || echo 'No worker running.'"
-
-# Worker status
-worker-status:
-    $SSH "pgrep -f bridge-worker.sh > /dev/null && echo 'Worker: RUNNING' || echo 'Worker: STOPPED'; echo 'Pending:' \\\$(ls $BRIDGE/inbox/*.json 2>/dev/null | wc -l); echo 'Completed:' \\\$(ls $BRIDGE/outbox/*.json 2>/dev/null | wc -l)"
-JUSTEOF
-
-# Generate bridge.sh CLI — zero-dependency alternative to justfile
+# Generate bridge.sh CLI
 sed \
     -e "s|{{TARGET}}|$TARGET|g" \
     -e "s|{{PORT}}|$SSH_PORT|g" \
@@ -212,21 +166,17 @@ chmod +x "$LOCAL_DIR/bridge.sh"
 echo ""
 echo "=== Setup complete ==="
 echo ""
-echo "Generated files:"
-echo "  $LOCAL_DIR/bridge.sh    — CLI (no dependencies, just bash+ssh)"
-echo "  $LOCAL_DIR/justfile     — justfile (if you have just installed)"
-echo "  $LOCAL_DIR/.mcp.json    — ssh-mcp config (for Claude Code integration)"
+echo "Generated in .claude-bridge/:"
+echo "  bridge.sh    — CLI (no dependencies, just bash+ssh)"
+echo "  .mcp.json    — ssh-mcp config (for Claude Code integration)"
 echo ""
-echo "Quick start (no dependencies):"
-echo "  $LOCAL_DIR/bridge.sh send 'hello'"
-echo "  $LOCAL_DIR/bridge.sh process"
-echo "  $LOCAL_DIR/bridge.sh results"
+echo "Quick start:"
+echo "  .claude-bridge/bridge.sh ask 'hello'"
+echo "  .claude-bridge/bridge.sh send 'hello'    # async"
+echo "  .claude-bridge/bridge.sh process          # process async tasks"
+echo "  .claude-bridge/bridge.sh results          # check results"
 echo ""
-echo "With just:"
-echo "  just -f $LOCAL_DIR/justfile send-task 'hello'"
-echo ""
-echo "With Claude Code:"
-echo "  cp $LOCAL_DIR/.mcp.json /path/to/project/"
-echo "  # Restart Claude Code to load ssh-mcp"
+echo "To use with Claude Code, copy .mcp.json to project root:"
+echo "  cp .claude-bridge/.mcp.json ."
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."
