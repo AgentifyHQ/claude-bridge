@@ -129,41 +129,29 @@ echo "[6/6] Generating local configuration..."
 
 FULL_SSH_KEY=$(eval echo "$SSH_KEY")
 LOCAL_DIR="$(pwd)/.claude-bridge"
-mkdir -p "$LOCAL_DIR"
-
-# Generate .mcp.json
-cat > "$LOCAL_DIR/.mcp.json" << MCPEOF
-{
-  "mcpServers": {
-    "ssh-$SERVER_NAME": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "ssh-mcp",
-        "--",
-        "--host=$SSH_HOST",
-        "--user=$SSH_USER",
-        "--key=$FULL_SSH_KEY",
-        "--port=$SSH_PORT",
-        "--maxChars=none"
-      ]
-    }
-  }
-}
-MCPEOF
-
 BRIDGE="$REMOTE_HOME/claude-bridge"
+mkdir -p "$LOCAL_DIR/servers"
 
-# Generate bridge.sh CLI
-sed \
-    -e "s|{{TARGET}}|$TARGET|g" \
-    -e "s|{{PORT}}|$SSH_PORT|g" \
-    -e "s|{{KEY}}|$FULL_SSH_KEY|g" \
-    -e "s|{{BRIDGE}}|$BRIDGE|g" \
-    "$SCRIPT_DIR/remote/bridge-cli.sh" > "$LOCAL_DIR/bridge.sh"
-chmod +x "$LOCAL_DIR/bridge.sh"
+# Generate server config
+cat > "$LOCAL_DIR/servers/$SERVER_NAME.conf" << CONFEOF
+SSH_TARGET="$TARGET"
+SSH_PORT="$SSH_PORT"
+SSH_KEY="$FULL_SSH_KEY"
+BRIDGE="$BRIDGE"
+CONFEOF
 
-# Deploy plugin + skill into .claude-bridge/ so it's self-contained
+# Set as default if it's the only server (or first one)
+if [ ! -f "$LOCAL_DIR/servers/.default" ]; then
+    echo "$SERVER_NAME" > "$LOCAL_DIR/servers/.default"
+fi
+
+# Copy bridge.sh (only if not already present or if it's older)
+if [ ! -f "$LOCAL_DIR/bridge.sh" ] || [ "$SCRIPT_DIR/remote/bridge-cli.sh" -nt "$LOCAL_DIR/bridge.sh" ]; then
+    cp "$SCRIPT_DIR/remote/bridge-cli.sh" "$LOCAL_DIR/bridge.sh"
+    chmod +x "$LOCAL_DIR/bridge.sh"
+fi
+
+# Deploy plugin + skill (only if not already present or if source is newer)
 mkdir -p "$LOCAL_DIR/.claude-plugin"
 cp "$SCRIPT_DIR/.claude-plugin/plugin.json" "$LOCAL_DIR/.claude-plugin/"
 cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
@@ -172,13 +160,21 @@ cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
 MCP_JSON="$(pwd)/.mcp.json"
 python3 -c "
 import json, os
-new_servers = json.load(open('$LOCAL_DIR/.mcp.json'))['mcpServers']
+new_server = {
+    'ssh-$SERVER_NAME': {
+        'command': 'npx',
+        'args': ['-y', 'ssh-mcp', '--',
+                 '--host=$SSH_HOST', '--user=$SSH_USER',
+                 '--key=$FULL_SSH_KEY', '--port=$SSH_PORT',
+                 '--maxChars=none']
+    }
+}
 existing = {}
 if os.path.exists('$MCP_JSON'):
     with open('$MCP_JSON') as f:
         existing = json.load(f)
 servers = existing.get('mcpServers', {})
-servers.update(new_servers)
+servers.update(new_server)
 existing['mcpServers'] = servers
 with open('$MCP_JSON', 'w') as f:
     json.dump(existing, f, indent=2)
@@ -202,19 +198,14 @@ with open('$CLAUDE_SETTINGS', 'w') as f:
 "
 
 echo ""
-echo "=== Setup complete ==="
+echo "=== Setup complete: $SERVER_NAME ==="
 echo ""
-echo "Generated:"
-echo "  .claude-bridge/    — bridge CLI, skill, and plugin"
-echo "  .mcp.json          — ssh-mcp config for Claude Code"
-echo "  .claude/settings.json — plugin registered"
+echo "Server '$SERVER_NAME' added to .claude-bridge/"
 echo ""
 echo "Quick start:"
 echo "  .claude-bridge/bridge.sh ask 'hello'"
-echo "  .claude-bridge/bridge.sh ask -c 'follow-up question'"
-echo "  .claude-bridge/bridge.sh send 'async task'"
-echo "  .claude-bridge/bridge.sh process"
-echo "  .claude-bridge/bridge.sh results"
+echo "  .claude-bridge/bridge.sh $SERVER_NAME ask 'hello'    # explicit server"
+echo "  .claude-bridge/bridge.sh servers                     # list all servers"
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."
 echo "      Restart Claude Code to load the skill and MCP server."
