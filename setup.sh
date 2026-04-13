@@ -216,9 +216,10 @@ existing = {}
 if os.path.exists('$CLAUDE_SETTINGS'):
     with open('$CLAUDE_SETTINGS') as f:
         existing = json.load(f)
+plugin_path = '$(pwd)/.claude-bridge'
 dirs = existing.get('pluginDirs', [])
-if '.claude-bridge' not in dirs:
-    dirs.append('.claude-bridge')
+if plugin_path not in dirs:
+    dirs.append(plugin_path)
 existing['pluginDirs'] = dirs
 with open('$CLAUDE_SETTINGS', 'w') as f:
     json.dump(existing, f, indent=2)
