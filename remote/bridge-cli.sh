@@ -158,8 +158,11 @@ case "$CMD" in
             shift
         fi
         [ -z "$1" ] && echo "Usage: ./bridge.sh [$SERVER] ask [-c] <prompt>" && exit 1
-        ALLOWED_TOOLS="Bash(ls:*) Bash(cat:*) Bash(df:*) Bash(ps:*) Bash(docker:*) Bash(systemctl:*) Bash(uname:*) Bash(hostname:*) Bash(uptime:*) Bash(free:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(grep:*) Bash(find:*) Read Write Edit Glob Grep"
-        $SSH "export PATH=\$HOME/.local/bin:\$HOME/.npm-global/bin:\$PATH && cd \$HOME/claude-workspace && claude -p '$1' --allowedTools '$ALLOWED_TOOLS' -n claude-bridge $CONTINUE_FLAG"
+        DEFAULT_TOOLS="Bash(ls:*) Bash(cat:*) Bash(df:*) Bash(ps:*) Bash(docker:*) Bash(systemctl:*) Bash(uname:*) Bash(hostname:*) Bash(uptime:*) Bash(free:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(grep:*) Bash(find:*) Read Write Edit Glob Grep"
+        ALLOWED_TOOLS="${EXTRA_TOOLS:+$EXTRA_TOOLS }$DEFAULT_TOOLS"
+        PERM_FLAG=""
+        [ "$SKIP_PERMISSIONS" = "true" ] && PERM_FLAG="--dangerously-skip-permissions"
+        $SSH "export PATH=\$HOME/.local/bin:\$HOME/.npm-global/bin:\$PATH && cd \$HOME/claude-workspace && claude -p '$1' --allowedTools '$ALLOWED_TOOLS' -n claude-bridge $PERM_FLAG $CONTINUE_FLAG"
         ;;
     send)
         [ -z "$2" ] && echo "Usage: ./bridge.sh [$SERVER] send <prompt>" && exit 1
