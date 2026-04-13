@@ -2,6 +2,9 @@
 # Requires: just (https://github.com/casey/just)
 # Wraps .claude-bridge/bridge.sh for convenience
 
+default:
+    @just --list
+
 bridge := justfile_directory() / ".claude-bridge/bridge.sh"
 
 # Ask remote Claude (synchronous)
