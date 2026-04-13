@@ -61,14 +61,18 @@ just follow-up "what about memory?"
 your-project/
 ├── .claude-bridge/         # gitignore this
 │   ├── bridge.sh           # CLI — all commands go through here
-│   ├── servers/            # per-server config files
-│   │   ├── my-server.conf  # SSH target, key, extra tools, etc.
-│   │   └── .default        # default server name
-│   ├── .claude-plugin/     # plugin metadata
-│   └── skills/             # Claude Code skill
+│   └── servers/            # per-server config files
+│       ├── my-server.conf  # SSH target, key, extra tools, etc.
+│       └── .default        # default server name
 ├── .mcp.json               # ssh-mcp config (merged)
-├── .claude/settings.json   # plugin registered (merged)
 └── justfile.claude-bridge  # optional, rename to justfile or merge into yours
+```
+
+**In your home directory:**
+```
+~/.claude/skills/claude-bridge/   # skill (teaches Claude how to use bridge)
+├── SKILL.md
+└── references/
 ```
 
 **On the remote server:**
@@ -87,9 +91,9 @@ your-project/
 
 - Installs Claude Code on the remote server (if not present)
 - Deploys bridge scripts (task processor, worker, submitter) to the remote
-- Creates `.claude-bridge/` with bridge CLI, server config, plugin, and skill
+- Creates `.claude-bridge/` with bridge CLI and server config
 - Merges ssh-mcp entry into `.mcp.json` (preserves existing MCP servers)
-- Merges plugin into `.claude/settings.json` (preserves existing settings)
+- Installs Claude Code skill to `~/.claude/skills/claude-bridge/` (teaches Claude how to use the bridge)
 - Creates `justfile.claude-bridge` (rename to `justfile` or merge into yours)
 - Supports multiple servers — run setup again with a different `--name`
 

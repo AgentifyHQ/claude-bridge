@@ -178,10 +178,11 @@ if [ ! -f "$LOCAL_DIR/bridge.sh" ] || [ "$SCRIPT_DIR/remote/bridge-cli.sh" -nt "
     chmod +x "$LOCAL_DIR/bridge.sh"
 fi
 
-# Deploy plugin + skill (only if not already present or if source is newer)
-mkdir -p "$LOCAL_DIR/.claude-plugin"
-cp "$SCRIPT_DIR/.claude-plugin/plugin.json" "$LOCAL_DIR/.claude-plugin/"
-cp -r "$SCRIPT_DIR/skills" "$LOCAL_DIR/"
+# Install skill to ~/.claude/skills/ (user-level, works across all projects)
+SKILL_DIR="$HOME/.claude/skills/claude-bridge"
+mkdir -p "$SKILL_DIR/references"
+cp "$SCRIPT_DIR/skills/claude-bridge/SKILL.md" "$SKILL_DIR/"
+cp "$SCRIPT_DIR/skills/claude-bridge/references/"*.md "$SKILL_DIR/references/"
 
 # Merge ssh-mcp config into project .mcp.json
 MCP_JSON="$(pwd)/.mcp.json"
@@ -207,24 +208,6 @@ with open('$MCP_JSON', 'w') as f:
     json.dump(existing, f, indent=2)
 "
 
-# Merge pluginDirs into .claude/settings.json
-CLAUDE_SETTINGS="$(pwd)/.claude/settings.json"
-mkdir -p "$(pwd)/.claude"
-python3 -c "
-import json, os
-existing = {}
-if os.path.exists('$CLAUDE_SETTINGS'):
-    with open('$CLAUDE_SETTINGS') as f:
-        existing = json.load(f)
-plugin_path = '$(pwd)/.claude-bridge'
-dirs = existing.get('pluginDirs', [])
-if plugin_path not in dirs:
-    dirs.append(plugin_path)
-existing['pluginDirs'] = dirs
-with open('$CLAUDE_SETTINGS', 'w') as f:
-    json.dump(existing, f, indent=2)
-"
-
 # Deploy justfile.claude-bridge as a reference
 cp "$SCRIPT_DIR/remote/justfile.template" "$(pwd)/justfile.claude-bridge"
 
@@ -241,6 +224,8 @@ echo ""
 echo "Optional justfile (requires just: https://github.com/casey/just):"
 echo "  mv justfile.claude-bridge justfile    # rename to use as-is"
 echo "  cat justfile.claude-bridge >> justfile # or append to existing"
+echo ""
+echo "Skill installed to ~/.claude/skills/claude-bridge/"
 echo ""
 echo "NOTE: SSH into $TARGET and run 'claude' to authenticate if not already done."
 echo "      Restart Claude Code to load the skill and MCP server."
