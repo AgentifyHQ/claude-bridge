@@ -79,12 +79,32 @@ your-project/
 
 This repo includes a Claude Code plugin with a skill that teaches your Claude agent how to use the bridge. Once installed, Claude will automatically know how to run bridge commands when you mention remote servers.
 
+### Install the skill
+
+**Per session** (temporary):
 ```bash
-# Add as a plugin directory in your Claude Code session
 claude --plugin-dir ~/claude-bridge
 ```
 
-Or add it permanently in your Claude Code settings.
+**Per project** (permanent for this project):
+
+Add to your project's `.claude/settings.json`:
+```json
+{
+  "pluginDirs": ["~/claude-bridge"]
+}
+```
+
+**Globally** (all projects):
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "pluginDirs": ["~/claude-bridge"]
+}
+```
+
+The skill is read directly from the cloned repo — no files are copied. Run `git pull` in `~/claude-bridge` to get updates.
 
 ## Documentation
 
